@@ -10,8 +10,10 @@ defmodule Stack do
 
   use GenServer
 
-  def start_link(_arg) do
-    GenServer.start_link(__MODULE__, [])
+  # Client side API
+
+  def start_link(state) do
+    GenServer.start_link(__MODULE__, state)
   end
 
   def push(stack_pid, element) do
@@ -22,21 +24,29 @@ defmodule Stack do
     GenServer.call(stack_pid, :pop)
   end
 
-  # Define the necessary Server callback functions:
+  # Initializing the process
+
   @impl true
-  def init(_arg) do
-    {:ok, []}
+  def init(state) do
+    {:ok, state}
   end
+
+  # When given a push, this handle will take the element, and prepend it into state
+  # This is asynchronous, so does not give a reply, just updates state with the element
 
   @impl true
   def handle_cast({:push, element}, state) do
     {:noreply, [element | state]}
   end
 
+  # When given a pop, it will take the head and tail of the list, respond with the the head, and the new
+  # state is now just the tail. When at an empty list, returns nil
+
   @impl true
   def handle_call(:pop, _from, state) do
-    [head | tail] = state
-
-    {:reply, head, tail}
+    case state do
+      [] -> {:reply, nil, state}
+      [head | tail] -> {:reply, head, tail}
+    end
   end
 end
